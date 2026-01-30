@@ -233,12 +233,12 @@ jobs:
               repo: context.repo.repo,
               body: `## 🔍 Preview Deployment
 
-# ✅ Your preview is ready!
+              ✅ Your preview is ready!
 
-# 🔗 **Preview URL:** ${previewUrl}
+              🔗 **Preview URL:** ${previewUrl}
 
-# 📦 **Branch:** \`${context.payload.pull_request.head.ref}\`
-# 🏗️ **Commit:** \`${context.payload.pull_request.head.sha.substring(0, 7)}\`
+              📦 **Branch:** \`${context.payload.pull_request.head.ref}\`
+              🏗️ **Commit:** \`${context.payload.pull_request.head.sha.substring(0, 7)}\`
 
-# *This preview will be updated with every commit to this PR.*`
-#             })
+              *This preview will be updated with every commit to this PR.*`
+                          })
