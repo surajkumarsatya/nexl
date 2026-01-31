@@ -1,11 +1,5 @@
 // src/helpers/clarity.ts
 
-declare global {
-  interface Window {
-    clarity?: ClarityFunction;
-  }
-}
-
 type ClarityFunction = {
   (...args: unknown[]): void;
   q?: unknown[][];
