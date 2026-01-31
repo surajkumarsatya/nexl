@@ -1,55 +1,41 @@
 // src/helpers/clarity.ts
-// Helper to inject/remove Microsoft Clarity script with Next.js-friendly types
+
+declare global {
+  interface Window {
+    clarity?: ClarityFunction;
+  }
+}
+
+type ClarityFunction = {
+  (...args: unknown[]): void;
+  q?: unknown[][];
+};
 
 export function injectClarity(projectId: string): void {
   if (typeof window === 'undefined') return;
 
-  // already injected and clarity queue exists
-  if (window.clarity?.q && document.getElementById('clarity-script')) return;
+  // Prevent double injection
+  if (document.getElementById('clarity-script')) return;
 
-  (function (
-    c: Document,
-    _l: string,
-    a: string,
-    _r: string,
-    i: string,
-    t?: HTMLScriptElement,
-    y?: Node,
-  ) {
-    try {
-      if (!window.clarity) {
-        const stub = function (...args: unknown[]) {
-          (window.clarity!.q = window.clarity!.q ?? []).push(args);
-        } as unknown as typeof window.clarity;
+  try {
+    if (!window.clarity) {
+      const clarityStub: ClarityFunction = (...args: unknown[]) => {
+        (clarityStub.q = clarityStub.q ?? []).push(args);
+      };
 
-        window.clarity = stub;
-      }
-
-      t = c.createElement(a) as HTMLScriptElement;
-      t.id = 'clarity-script';
-      t.async = true;
-      t.src = `https://www.clarity.ms/tag/${i}`;
-      y = c.getElementsByTagName(a)[0];
-      y?.parentNode?.insertBefore(t, y);
-    } catch (e) {
-      if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        console.error('[Clarity] Script injection failed:', e);
-      }
+      window.clarity = clarityStub;
     }
-  })(document, 'clarity', 'script', 'script', projectId);
-}
 
-export function removeClarity(): void {
-  if (typeof window === 'undefined') return;
+    const script = document.createElement('script');
+    script.id = 'clarity-script';
+    script.async = true;
+    script.src = `https://www.clarity.ms/tag/${projectId}`;
 
-  const script = document.getElementById('clarity-script');
-  if (script && script.parentNode) {
-    script.parentNode.removeChild(script);
+    document.head.appendChild(script);
+  } catch (e) {
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.error('[Clarity] Script injection failed:', e);
+    }
   }
-
-  // Clear the typed property instead of deleting it
-  window.clarity = undefined;
 }
-
-export {};

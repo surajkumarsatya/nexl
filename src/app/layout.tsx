@@ -1,6 +1,8 @@
+// app/layout.tsx
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import ClientLayout from './client-layout';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -14,20 +16,18 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'nexl',
-  description: 'next level intelligence ',
+  description: 'next level intelligence',
   icons: {
     icon: '/icons/desk-favicon.png',
   },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>{children}</body>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <ClientLayout>{children}</ClientLayout>
+      </body>
     </html>
   );
 }
