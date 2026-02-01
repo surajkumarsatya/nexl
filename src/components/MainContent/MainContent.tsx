@@ -95,7 +95,7 @@ export default function MainContent() {
             <h4 className="text-purple-600 uppercase tracking-widest">
               Think next. Think <span className="font-bold">nexl</span>.
             </h4>
-            <p>This is test url changed setup - 01/02/2026</p>
+            <p>Hi, how are you ? - 01/02/2026</p>
           </div>
 
           {/* <div className="grid w-full gap-2">
