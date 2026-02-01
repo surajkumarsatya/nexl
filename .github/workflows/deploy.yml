@@ -1,43 +1,48 @@
-name: CI/CD Pipeline - Cloudflare Pages
+name: CI Pipeline
 
 on:
-  push:
-    branches:
-      - staging
-      - main
-
   pull_request:
     branches:
       - staging
       - main
 
-  workflow_dispatch:
+  push:
+    branches:
+      - staging
+      - main
 
 env:
   NODE_VERSION: '20.x'
 
-# --------------------
-# CODE QUALITY
-# --------------------
 jobs:
+  # --------------------
+  # CODE QUALITY
+  # --------------------
   quality-checks:
     name: Code Quality & Type Checking
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      - run: npm ci
-      - run: npm run lint
-      - run: npx tsc --noEmit
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npx tsc --noEmit
 
   # --------------------
-  # BUILD
+  # BUILD VERIFICATION
   # --------------------
   build:
     name: Build Next.js
@@ -45,100 +50,17 @@ jobs:
     needs: quality-checks
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-      - name: 🏗️ Build (Staging)
-        if: github.ref != 'refs/heads/main'
+      - name: Build
         run: npm run build
-        env:
-          NEXT_PUBLIC_GEMINI_API_KEY: ${{ secrets.NEXT_PUBLIC_GEMINI_API_KEY_STAGING }}
-
-      - name: 🏗️ Build (Production)
-        if: github.ref == 'refs/heads/main'
-        run: npm run build
-        env:
-          NEXT_PUBLIC_GEMINI_API_KEY: ${{ secrets.NEXT_PUBLIC_GEMINI_API_KEY_PROD }}
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: nextjs-build
-          path: out
-          retention-days: 1
-
-  # --------------------
-  # STAGING DEPLOY
-  # --------------------
-  deploy-staging:
-    name: 🚀 Deploy Staging
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/staging' && github.event_name == 'push'
-
-    environment:
-      name: staging
-      url: https://staging.nexl.dev
-
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: nextjs-build
-          path: out
-
-      - uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy out --project-name=nexl-staging
-
-  # --------------------
-  # PRODUCTION DEPLOY
-  # --------------------
-  deploy-production:
-    name: 🚀 Deploy Production
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
-    environment:
-      name: production
-      url: https://nexl.dev
-
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: nextjs-build
-          path: out
-
-      - uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy out --project-name=nexl-production
-
-  # --------------------
-  # PR PREVIEW
-  # --------------------
-  deploy-preview:
-    name: 🔍 PR Preview
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.event_name == 'pull_request'
-
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: nextjs-build
-          path: out
-
-      - uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy out --project-name=nexl-staging --branch=pr-${{ github.event.pull_request.number }}
